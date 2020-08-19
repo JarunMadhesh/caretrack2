@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:caretrack/providers/symptomsHistory.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:neumorphic/neumorphic.dart';
@@ -40,6 +41,7 @@ class _NewProfileScreenState extends State<NewProfile2>
     sex: "",
     smoker: false,
     age: 0,
+    isAlreadyavailable: false,
   );
 
   bool _isEng = true;
@@ -217,8 +219,15 @@ class _NewProfileScreenState extends State<NewProfile2>
     try {
       Navigator.of(context).pop();
       Provider.of<NewProfileScreenController>(context, listen: false).setTrue();
+      //
+      //
+      // actual thinegey
       await Provider.of<ProfileProvider>(context, listen: false)
           .addProfile(_profile);
+      await Provider.of<SymptomsHistory>(context, listen: false).getSymptoms(context);
+      //
+      //
+      //
       Provider.of<NewProfileScreenController>(context, listen: false)
           .setFalse();
       Navigator.of(context).pushReplacementNamed(
@@ -771,6 +780,7 @@ class _NewProfileScreenState extends State<NewProfile2>
                                   sex: _profile.sex,
                                   smoker: false,
                                   age: _profile.age,
+                                  isAlreadyavailable: false
                                 ),
                               );
                             },

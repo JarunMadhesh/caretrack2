@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart' as path;
@@ -17,6 +16,8 @@ class Profile {
   String sex;
   int age;
 
+  bool isAlreadyavailable;
+
   bool diabetes;
   bool bloodPressure;
   bool asthma;
@@ -30,24 +31,26 @@ class Profile {
 
   String language;
 
-  Profile(
-      {this.name,
-      this.patientID,
-      this.dob,
-      this.phoneNumber,
-      this.diabetes,
-      this.bloodPressure,
-      this.asthma,
-      this.heartDisease,
-      this.dialysis,
-      this.arthritis,
-      this.antiInflam,
-      this.chemotheraphy,
-      this.smoker,
-      this.cortisone,
-      this.language,
-      this.sex,
-      this.age});
+  Profile({
+    this.name,
+    this.patientID,
+    this.dob,
+    this.phoneNumber,
+    this.diabetes,
+    this.bloodPressure,
+    this.asthma,
+    this.heartDisease,
+    this.dialysis,
+    this.arthritis,
+    this.antiInflam,
+    this.chemotheraphy,
+    this.smoker,
+    this.cortisone,
+    this.language,
+    this.sex,
+    this.age,
+    this.isAlreadyavailable,
+  });
 }
 
 class ProfileProvider with ChangeNotifier {
@@ -84,10 +87,12 @@ class ProfileProvider with ChangeNotifier {
             "Arthritis": p.arthritis ? 'T' : 'F',
             "Chemotherapy": p.chemotheraphy ? 'T' : 'F',
             "Smoker": p.smoker ? 'T' : 'F',
-            "Cortisone_Med": p.cortisone ? 'T' : 'F'
+            "Cortisone_Med": p.cortisone ? 'T' : 'F',
+            "Flag": "Insert",
           }
         ]
       };
+      // print("add agutha?");
       final response = await http.post(
         url,
         headers: {'content-type': 'application/json'},
@@ -116,6 +121,41 @@ class ProfileProvider with ChangeNotifier {
           'smoker': p.smoker ? 1 : 0,
           'cortisone': p.cortisone ? 1 : 0,
           'antiInflam': p.antiInflam ? 1 : 0,
+          'language': p.language
+        },
+        conflictAlgorithm: sql.ConflictAlgorithm.replace,
+        nullColumnHack: "null",
+      );
+      await LatestSymtoms().addNewSymtomProfile(p.patientID);
+      await getProfiles();
+    } catch (err) {
+      throw MyException('Something went wrong. Keep calm and try again.');
+    }
+  }
+
+  Future addProfiletoLocal(Profile p) async {
+    try {
+      final sql.Database db = await profilesdatabase();
+
+      await db.insert(
+        'profile',
+        {
+          'name': p.name,
+          'patientID': p.patientID,
+          'dob': p.dob.toString(),
+          'age': p.age,
+          'phoneNumber': p.phoneNumber,
+          'sex': p.sex,
+          'diabetes': 0,
+          'bloodPressure': 0,
+          'asthma': 0,
+          'heartDisease': 0,
+          'dialysis': 0,
+          'arthritis': 0,
+          'chemotheraphy': 0,
+          'smoker': 0,
+          'cortisone': 0,
+          'antiInflam': 0,
           'language': p.language
         },
         conflictAlgorithm: sql.ConflictAlgorithm.replace,

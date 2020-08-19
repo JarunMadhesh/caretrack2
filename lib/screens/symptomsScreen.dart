@@ -70,35 +70,42 @@ class _SymptomScreenState extends State<SymptomScreen>
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Scaffold(
-          backgroundColor: const Color(0xffEAEBF3),
-          appBar: AppBar(
+        WillPopScope(
+          onWillPop: () async {
+            Navigator.of(context).pop();
+            Navigator.of(context).pop();
+            return false;
+          },
+          child: Scaffold(
             backgroundColor: const Color(0xffEAEBF3),
-            centerTitle: true,
-            elevation: 0.0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-              color: const Color(0xff8b3365),
-            ),
-            title: Text(
-              _isEng ? 'Symptoms' : 'அறிகுறிகள்',
-              style: TextStyle(
-                fontFamily: 'RalewayMed',
-                fontSize: _isEng ? 21 : 18,
-                fontWeight: FontWeight.w300,
+            appBar: AppBar(
+              backgroundColor: const Color(0xffEAEBF3),
+              centerTitle: true,
+              elevation: 0.0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
                 color: const Color(0xff8b3365),
               ),
+              title: Text(
+                _isEng ? 'Symptoms' : 'அறிகுறிகள்',
+                style: TextStyle(
+                  fontFamily: 'RalewayMed',
+                  fontSize: _isEng ? 21 : 18,
+                  fontWeight: FontWeight.w300,
+                  color: const Color(0xff8b3365),
+                ),
+              ),
             ),
+            body: ModalRoute.of(context).settings.arguments == null
+                ? Container(
+                    child: Center(child: Text("Loading..")),
+                  )
+                : SymptomTile(ModalRoute.of(context).settings.arguments, _time),
           ),
-          body: ModalRoute.of(context).settings.arguments == null
-              ? Container(
-                  child: Center(child: Text("Loading..")),
-                )
-              : SymptomTile(ModalRoute.of(context).settings.arguments, _time),
         ),
         if (Provider.of<SymptomsScreenController>(context).isLoading)
           Container(

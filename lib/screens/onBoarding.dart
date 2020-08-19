@@ -90,7 +90,7 @@ class _OnBoardingState extends State<OnBoarding> {
   Widget circleBar(bool isActive) {
     return AnimatedContainer(
       duration: Duration(milliseconds: 150),
-      margin:  const EdgeInsets.symmetric(horizontal: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       height: isActive ? 9 : 6,
       width: isActive ? 9 : 6,
       decoration: BoxDecoration(
@@ -151,7 +151,23 @@ class _OnBoardingState extends State<OnBoarding> {
                       color: const Color(0xff8b3365),
                     ),
                   )
-                : Container(),
+                : Container(
+                    child: FlatButton(
+                      child: Text(
+                        "Skip",
+                        style: const TextStyle(
+                          fontFamily: 'Raleway',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xff8b3365),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context)
+                            .pushReplacementNamed(PhoneNumberScreen.route);
+                      },
+                    ),
+                  ),
           )
         ],
       ),

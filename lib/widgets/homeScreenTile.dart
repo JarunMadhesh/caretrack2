@@ -69,7 +69,8 @@ class HomeScreenTile extends StatelessWidget {
                   {
                     final result = await Navigator.of(context)
                         .pushNamed(FeedbackScreen.route);
-                    if (result) {
+                        
+                    if (result!=null && result) {
                       Scaffold.of(context).showSnackBar(SnackBar(
                         duration: Duration(seconds: 3),
                         content: Text(

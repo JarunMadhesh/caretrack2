@@ -13,17 +13,18 @@ class DBProfile {
   final String gender;
   final DateTime dob;
   final int age;
+  final bool isAlreadyPresent;
 
-  DBProfile(
-      this.name, this.phoneNumber, this.uhid, this.gender, this.dob, this.age);
+  DBProfile(this.name, this.phoneNumber, this.uhid, this.gender, this.dob,
+      this.age, this.isAlreadyPresent);
 }
 
 class DBProfileProvider with ChangeNotifier {
   List<DBProfile> _profiles = [
-    DBProfile("Ram", "7708998036", "uhid1", "Male", DateTime.now(), 10),
-    DBProfile("Meghna", "ph no", "uhid1", "Female", DateTime.now(), 20),
-    DBProfile("Kiran", "ph no", "uhid1", "Male", DateTime.now(), 30),
-    DBProfile("Raj", "ph no", "uhid1", "Female", DateTime.now(), 40),
+    DBProfile("Ram", "7708998036", "uhid1", "Male", DateTime.now(), 10, false),
+    DBProfile("Meghna", "ph no", "uhid1", "Female", DateTime.now(), 20, false),
+    DBProfile("Kiran", "ph no", "uhid1", "Male", DateTime.now(), 30, true),
+    DBProfile("Raj", "ph no", "uhid1", "Female", DateTime.now(), 40, false),
   ];
 
   int calculateAge(DateTime birthDate) {
@@ -43,30 +44,44 @@ class DBProfileProvider with ChangeNotifier {
     return age;
   }
 
-  Future fetchprofiles(
-      String phoneNumber, String otp, BuildContext context) async {
+  Future<bool> checkAvailability(String uhid) async {
     try {
       final url =
-          'https://caretrackpd.kauveryhospital.com/caretrackpd/api/Values/Covid19AppHMS_Pat_Details';
-      Map<String, String> map = {
-        'mobileNo': phoneNumber,
-        'otp': otp,
+          'https://caretrackpd.kauveryhospital.com/caretrackphr/api/Values/Covid19AppHMS_PatientHealthRecord';
+
+      final _map = {
+        "results": [
+          {"UHID": uhid, "Flag": "Select"}
+        ]
       };
-      final response = await http.post(
+
+      final _response = await http.post(
         url,
         headers: {'content-type': 'application/json'},
-        body: jsonEncode(map),
+        body: json.encode(_map),
       );
 
-      if (response.statusCode == 404) {
-        throw MyException('Invalid OTP. Keep calm and try again.');
+      if (_response.body.length == 0) {
+        return false;
       }
 
-      List<dynamic> profiles = json.decode(response.body)['results'];
+      if (_response.statusCode != 200) {
+        throw MyException('Something went wrong. Keep calm and try again.');
+      }
 
+      return true;
+    } catch (err) {
+      throw MyException('Something went wrong. Keep calm and try again.');
+    }
+  }
+
+  Future putProfile(
+      List<dynamic> profiles, String phoneNumber, BuildContext context) async {
+    try {
       List<DBProfile> _tempList = [];
-      profiles.forEach((element) {
+      await Future.forEach(profiles, (element) async {
         bool flag = true;
+
         Provider.of<ProfileProvider>(context, listen: false)
             .profile
             .forEach((each) {
@@ -91,11 +106,10 @@ class DBProfileProvider with ChangeNotifier {
               element['dob'].toString().length == 0
                   ? DateTime(DateTime.now().year - int.parse(element['age']))
                   : DateTime(year, month, day),
-              element['dob'].toString().length == 0
+              element['age'].toString().length != 0
                   ? int.parse(element['age'])
-                  : calculateAge(
-                      DateTime(year, month, day),
-                    ),
+                  : -1,
+              false,
             ),
           );
         }
@@ -103,11 +117,43 @@ class DBProfileProvider with ChangeNotifier {
       _profiles = _tempList;
       notifyListeners();
     } catch (err) {
-      if (err.toString() == 'Invalid OTP. Keep calm and try again.') {
-        throw (err);
+      print(err.toString());
+      throw err;
+    }
+  }
+
+  Future fetchprofiles(
+      String phoneNumber, String password, BuildContext context) async {
+    try {
+      final url =
+          'https://caretrackpd.kauveryhospital.com/caretrackpd/api/Values/Covid19AppHMS_Pat_Details';
+      Map<String, String> map = {
+        'mobileNo': phoneNumber,
+        'pwsword': password,
+        'Flag': 'PwdCheck',
+      };
+
+      final response = await http.post(
+        url,
+        headers: {'content-type': 'application/json'},
+        body: jsonEncode(map),
+      );
+
+      if (response.reasonPhrase != "OK") {
+        throw MyException("NOT OK");
       }
-      throw MyException(
-          'Something went wrong. Check your internet. Keep calm and try again.');
+
+      List<dynamic> profiles = json.decode(response.body)['results'];
+
+      // print(profiles);
+      // print("\n\n");
+
+      putProfile(profiles, phoneNumber, context);
+    } catch (err) {
+      if (err.toString() == "NOT OK") {
+        throw MyException("Invalid Password");
+      }
+      throw "'Something went wrong. Check your internet. Keep calm and try again.";
     }
   }
 

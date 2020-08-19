@@ -178,7 +178,7 @@ class _SymptomTileState extends State<SymptomTile>
   Future save() async {
     try {
       Provider.of<SymptomsScreenController>(context, listen: false).setTrue();
-      await Future.delayed(Duration(seconds: 1));
+      // await Future.delayed(Duration(seconds: 0));
       await Provider.of<LatestSymtoms>(context, listen: false).updateSymptom(
         Symptoms(
           patientId: widget.id,
@@ -257,7 +257,7 @@ class _SymptomTileState extends State<SymptomTile>
       Provider.of<SymptomsScreenController>(context, listen: false).setTrue();
       final bool _isAvailable =
           await Provider.of<SymptomsHistory>(context, listen: false)
-              .isAvailable(widget.id, widget.time, context);
+              .isAvailable(widget.id, widget.time, context, true);
       if (_isAvailable) {
         throw MyException('Already exists');
       }
@@ -2349,7 +2349,6 @@ class _SymptomTileState extends State<SymptomTile>
                   });
                   showDialog(
                     context: context,
-                    barrierDismissible: false,
                     barrierColor: Colors.white60,
                     child: AlertDialog(
                       elevation: 0.0,
@@ -2388,6 +2387,18 @@ class _SymptomTileState extends State<SymptomTile>
                                   style: const TextStyle(
                                     fontFamily: 'Raleway',
                                     fontSize: 21,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  _isEng
+                                      ? "*Symtoms cannot be changed once you submit"
+                                      : "*நீங்கள் சமர்ப்பித்தவுடன் குறியீடுகளை மாற்ற முடியாது",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontFamily: 'Raleway',
+                                    fontSize: 14,
                                     color: Colors.white,
                                   ),
                                 ),
@@ -2498,7 +2509,6 @@ class _SymptomTileState extends State<SymptomTile>
                   });
                   showDialog(
                     context: context,
-                    barrierDismissible: false,
                     barrierColor: Colors.white60,
                     child: AlertDialog(
                       elevation: 0.0,

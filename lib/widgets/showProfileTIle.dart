@@ -193,7 +193,7 @@ class ProfileTile extends StatelessWidget {
             Container(
               alignment: Alignment.centerLeft,
               child: const Text(
-                'Phone Number',
+                'mobile Number',
                 style: const TextStyle(
                   fontFamily: 'Raleway',
                   fontSize: 14,

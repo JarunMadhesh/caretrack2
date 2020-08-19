@@ -34,8 +34,9 @@ class _TrackerScreenState extends State<TrackerScreen> {
   void init() {
     _symptoms = Provider.of<SymptomsHistory>(context, listen: false)
         .symptoms(id)
-        .reversed
-        .toList();
+        .toList()
+          ..sort((a, b) => b.time.compareTo(a.time))
+          ..reversed;
     _isEng = Provider.of<ProfileProvider>(context, listen: false)
             .profile
             .firstWhere((element) => element.patientID == id)
@@ -213,7 +214,6 @@ class _TrackerScreenState extends State<TrackerScreen> {
                               } else {
                                 selectedIndex = i;
                               }
-
                               setState(() {});
                             },
                             child: TrackerTile(_symptoms[i], _date, _time,

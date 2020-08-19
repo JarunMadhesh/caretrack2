@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neumorphic/neumorphic.dart';
 
+
 import '../widgets/homeScreenTile.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -70,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 HomeScreenTile("Symptoms", "symptoms"),
                                 HomeScreenTile("Tracker", "tracker"),
                                 HomeScreenTile("Hygiene Tips", "hygiene"),
-                                HomeScreenTile("Corona Corner", "corona"),
+                                HomeScreenTile("Corona Corner", "viruz"),
                                 HomeScreenTile("Profile", "profile"),
                                 HomeScreenTile("Feedback", "feedback"),
                               ],
@@ -110,20 +111,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.all(15),
                             child: SvgPicture.asset('assets/icons/contact.svg',
                                 color: Colors.white),
-                          ),
-                          Container(
-                            height: 58,
-                            margin:  const EdgeInsets.only(left: 20),
-                            padding:  const EdgeInsets.only(top: 10),
-                            alignment: Alignment.center,
-                            child: const Text(
-                              '093848 46223',
-                              style: const TextStyle(
-                                fontFamily: 'Calibre',
-                                fontSize: 23,
-                                color: const Color(0xff000000),
+                          ),Container(
+                              height: 58,
+                              margin: const EdgeInsets.only(left: 20),
+                              padding: const EdgeInsets.only(top: 10),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                '093848 46223',
+                                style: const TextStyle(
+                                  fontFamily: 'Calibre',
+                                  fontSize: 23,
+                                  color: const Color(0xff000000),
+                                ),
                               ),
-                            ),
+                            
                           ),
                           Container(
                             margin: const EdgeInsets.only(left: 10),

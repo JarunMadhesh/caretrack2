@@ -53,7 +53,8 @@ class _SymptomScreenState extends State<SymptomInitScreen>
 
         final bool _isAvailable =
             await Provider.of<SymptomsHistory>(context, listen: false)
-                .isAvailable(_profiles[0].patientID, time, context);
+                .isAvailable(_profiles[0].patientID, time, context, false);
+        
         if (!_isAvailable) {
           Navigator.of(context).pushNamed(SymptomScreen.route,
               arguments: _profiles[0].patientID);
@@ -116,7 +117,7 @@ class _SymptomScreenState extends State<SymptomInitScreen>
               ),
               body: !_isOnTime
                   ? Container(
-                      padding:  const EdgeInsets.all(30),
+                      padding: const EdgeInsets.all(30),
                       child: Center(
                         child: Text(
                           "You can update your symptoms only twice a day.\n\nMorning 7:00-10:00\nEvening 5:00-8:00",
@@ -131,7 +132,7 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                     )
                   : _isSingleAndAvailable
                       ? Container(
-                          padding:  const EdgeInsets.all(30),
+                          padding: const EdgeInsets.all(30),
                           child: Center(
                             child: Text(
                               'You have already uploaded your symptoms',
@@ -145,7 +146,7 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                           ),
                         )
                       : Container(
-                          padding:  const EdgeInsets.all(30),
+                          padding: const EdgeInsets.all(30),
                           alignment: Alignment.topCenter,
                           child: ListView.builder(
                             physics: new NeverScrollableScrollPhysics(),
@@ -154,7 +155,7 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                               i -= 2;
                               if (i == -2) {
                                 return Container(
-                                  margin: const  EdgeInsets.only(bottom: 20),
+                                  margin: const EdgeInsets.only(bottom: 20),
                                   height:
                                       MediaQuery.of(context).size.height * 0.18,
                                   child: Image.asset('assets/logo.png'),
@@ -162,7 +163,8 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                               }
                               if (i == -1)
                                 return Container(
-                                  margin: const  EdgeInsets.only(top: 20, bottom: 10),
+                                  margin: const EdgeInsets.only(
+                                      top: 20, bottom: 10),
                                   alignment: Alignment.topCenter,
                                   child: Text(
                                     "Who is the patient today?",
@@ -176,7 +178,8 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                                 );
                               return GestureDetector(
                                 onTap: () async {
-                                  Provider.of<ScreenController>(context, listen: false)
+                                  Provider.of<ScreenController>(context,
+                                          listen: false)
                                       .setTrue();
                                   int no = 0;
                                   if (TimeOfDay.now().hour >= 7 &&
@@ -191,8 +194,9 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                                               context,
                                               listen: false)
                                           .isAvailable(_profiles[i].patientID,
-                                              time, context);
-                                  Provider.of<ScreenController>(context, listen: false)
+                                              time, context, false);
+                                  Provider.of<ScreenController>(context,
+                                          listen: false)
                                       .setFalse();
                                   if (!_isAvailable) {
                                     Navigator.of(context).pushNamed(
@@ -238,9 +242,10 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                                                 },
                                               ),
                                             ),
-                                        const SizedBox(height: 20),
+                                            const SizedBox(height: 20),
                                             Container(
-                                              padding:  const EdgeInsets.symmetric(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 40,
                                                 vertical: 30,
                                               ),
@@ -295,7 +300,7 @@ class _SymptomScreenState extends State<SymptomInitScreen>
                                     borderRadius: BorderRadius.circular(30),
                                     color: const Color(0xffEAEBF3),
                                   ),
-                                  padding:  const EdgeInsets.all(10),
+                                  padding: const EdgeInsets.all(10),
                                   child: AutoSizeText(
                                     _profiles[i].name,
                                     maxLines: 1,

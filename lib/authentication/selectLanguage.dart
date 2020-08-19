@@ -1,9 +1,15 @@
+import 'package:caretrack/authentication/welcomePage.dart';
+import 'package:caretrack/providers/screenController.dart';
+import 'package:caretrack/providers/symptomsHistory.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import 'selectProfile.dart';
 import '../providers/profile.dart';
 import '../screens/newProfile2.dart';
+
+import 'dart:math' as math;
 
 class SelectLanguageScreen extends StatefulWidget {
   static const route = '/SelectLanguageScreen';
@@ -12,7 +18,8 @@ class SelectLanguageScreen extends StatefulWidget {
   _SelectLanguageScreen createState() => _SelectLanguageScreen();
 }
 
-class _SelectLanguageScreen extends State<SelectLanguageScreen> {
+class _SelectLanguageScreen extends State<SelectLanguageScreen>
+    with TickerProviderStateMixin {
   String phoneNumber = '';
   List<String> language = ['English', 'Tamil'];
   int selectedIndex = -1;
@@ -20,27 +27,164 @@ class _SelectLanguageScreen extends State<SelectLanguageScreen> {
 
   Profile args;
 
+  Animation<double> _animation;
+  AnimationController _controller;
+
   @override
   void initState() {
     super.initState();
     Future.delayed(Duration(microseconds: 0), () {
-      args = ModalRoute.of(context).settings.arguments;
+      _controller = AnimationController(
+          vsync: this, duration: Duration(milliseconds: 700));
+      _animation = Tween(begin: 0.0, end: 1.0).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic));
+      setState(() {
+        args = ModalRoute.of(context).settings.arguments;
+      });
     });
   }
 
-  void onSubmit() {
-    if (selectedIndex == -1) {
-      setState(() {
-        errorText = 'Please select language';
-      });
-      return;
-    }
-    setState(() {
-      errorText = '';
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    Future.delayed(Duration(milliseconds: 0), () async {
+      while (Provider.of<NewProfileScreenController>(context, listen: false)
+          .isLoading) {
+        await _controller.forward();
+        await _controller.reverse();
+      }
     });
-    Navigator.of(context).pushReplacementNamed(
-      NewProfile2.route,
-      arguments: Profile(
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget errorDialogue(Function function) {
+    return AlertDialog(
+      elevation: 0.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      backgroundColor: Colors.transparent,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            height: 40,
+            width: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xff8b3365),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  offset: const Offset(2, 2),
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.close),
+              color: Colors.white,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 30,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xff8b3365),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey,
+                  offset: const Offset(6, 6),
+                  blurRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/sadFace.svg',
+                  color: Colors.white,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Error occurred !',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Raleway',
+                    fontSize: 21,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xffeaebf3),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'Something went wrong.\nKeep calm and try again.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: 'Raleway',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xffe5e5e8),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    function();
+                  },
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 7, horizontal: 30),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Text(
+                      'Try again',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Raleway',
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: const Color(0xff8b3365),
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void onSubmit() async {
+    try {
+      if (selectedIndex == -1) {
+        setState(() {
+          errorText = 'Please select language';
+        });
+        return;
+      }
+      setState(() {
+        errorText = '';
+      });
+      Profile profile = Profile(
         name: args.name,
         antiInflam: false,
         arthritis: false,
@@ -58,8 +202,28 @@ class _SelectLanguageScreen extends State<SelectLanguageScreen> {
         sex: args.sex,
         smoker: false,
         age: args.age,
-      ),
-    );
+        isAlreadyavailable: args.isAlreadyavailable,
+      );
+      if (args.isAlreadyavailable) {
+        Provider.of<NewProfileScreenController>(context, listen: false)
+            .setTrue();
+        await Provider.of<ProfileProvider>(context, listen: false)
+            .addProfiletoLocal(profile);
+        await Provider.of<SymptomsHistory>(context, listen: false)
+            .getSymptoms(context);
+        Provider.of<NewProfileScreenController>(context, listen: false)
+            .setFalse();
+        Navigator.of(context).pushReplacementNamed(
+          WelomePage.route,
+          arguments: profile.name,
+        );
+      } else {
+        Navigator.of(context)
+            .pushReplacementNamed(NewProfile2.route, arguments: profile);
+      }
+    } catch (err) {
+      errorDialogue(onSubmit);
+    }
   }
 
   @override
@@ -199,33 +363,71 @@ class _SelectLanguageScreen extends State<SelectLanguageScreen> {
                         ),
                         alignment: Alignment.center,
                       ),
-                      Container(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white,
-                                offset: const Offset(-5.0, -5.0),
-                                blurRadius: 10.0,
-                                spreadRadius: 2.0,
+                      args != null && args.isAlreadyavailable
+                          ? Container(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white,
+                                      offset: const Offset(-5.0, -5.0),
+                                      blurRadius: 10.0,
+                                      spreadRadius: 2.0,
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      offset: const Offset(5.0, 5.0),
+                                      blurRadius: 10.0,
+                                    ),
+                                  ],
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: const Color(0xffEAEBF3),
+                                ),
+                                child: GestureDetector(
+                                  child: Container(
+                                    child: Text(
+                                      "Confirm",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontFamily: "RalewayMed",
+                                        color: Color(0xff8b3365),
+                                      ),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                        vertical: 15, horizontal: 20),
+                                  ),
+                                  onTap: onSubmit,
+                                ),
                               ),
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
-                                offset: const Offset(5.0, 5.0),
-                                blurRadius: 10.0,
+                              alignment: Alignment.center,
+                            )
+                          : Container(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white,
+                                      offset: const Offset(-5.0, -5.0),
+                                      blurRadius: 10.0,
+                                      spreadRadius: 2.0,
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      offset: const Offset(5.0, 5.0),
+                                      blurRadius: 10.0,
+                                    ),
+                                  ],
+                                  borderRadius: BorderRadius.circular(50),
+                                  color: const Color(0xffEAEBF3),
+                                ),
+                                child: IconButton(
+                                  icon: Icon(Icons.arrow_forward),
+                                  onPressed: onSubmit,
+                                  color: const Color(0xff8b3365),
+                                ),
                               ),
-                            ],
-                            borderRadius: BorderRadius.circular(50),
-                            color: const Color(0xffEAEBF3),
-                          ),
-                          child: IconButton(
-                            icon: Icon(Icons.arrow_forward),
-                            onPressed: onSubmit,
-                            color: const Color(0xff8b3365),
-                          ),
-                        ),
-                        alignment: Alignment.center,
-                      ),
+                              alignment: Alignment.center,
+                            ),
                     ],
                   )
                 ],
@@ -244,6 +446,26 @@ class _SelectLanguageScreen extends State<SelectLanguageScreen> {
                     )
                   : Container(),
             ),
+            if (Provider.of<NewProfileScreenController>(context).isLoading)
+              Container(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                color: Colors.white70,
+                alignment: Alignment.center,
+                child: AnimatedBuilder(
+                  animation: _animation,
+                  builder: (ctx, _) => Transform.rotate(
+                    angle: math.pi * 2 * _animation.value,
+                    child: Icon(
+                      Icons.add,
+                      size: 140,
+                      color: _animation.value > 0.5
+                          ? Color(0xffCC2F7A)
+                          : Color(0xff8B3365),
+                    ),
+                  ),
+                ),
+              )
           ],
         ),
       ),

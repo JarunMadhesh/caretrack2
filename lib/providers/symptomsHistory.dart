@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
-
 import '../classes/symtoms.dart';
 import '../providers/exception.dart';
 import '../providers/profile.dart';
@@ -18,8 +17,11 @@ class SymptomsHistory with ChangeNotifier {
     }).toList();
   }
 
-  Future<bool> isAvailable(String id, String time, BuildContext context) async {
-    await getSymptoms(context);
+  Future<bool> isAvailable(
+      String id, String time, BuildContext context, bool shouldFetch) async {
+    if (shouldFetch) {
+      await getSymptoms(context);
+    }
     Iterable<Symptoms> temp = _symptomsHistory.where((element) {
       return (element.patientId.substring(0, 14) == id.substring(0, 14) &&
           element.time.substring(0, 11) == time.substring(0, 11));
@@ -60,6 +62,7 @@ class SymptomsHistory with ChangeNotifier {
                 'Temperature': symptom.temperature,
                 'Vomiting': symptom.vomiting,
                 'SkinRash': symptom.skinRash ? 1 : 0,
+                "Flag" : "Insert",
               }
             ]
           },
@@ -98,9 +101,10 @@ class SymptomsHistory with ChangeNotifier {
         return;
       }
 
+
       List<Symptoms> _symps = [];
       List<dynamic> responseMap = json.decode(response.body)['results'];
-      
+
       await Future.forEach(
           responseMap,
           (each) => {

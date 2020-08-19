@@ -1,3 +1,4 @@
+
 import '../screens/homeScreen.dart';
 import 'package:flutter/material.dart';
 
@@ -23,6 +24,7 @@ class _WelomePageState extends State<WelomePage> with TickerProviderStateMixin {
     Future.delayed(Duration(milliseconds: 0), () async {
       setState(() {
         name = ModalRoute.of(context).settings.arguments;
+        
       });
       await _controller.forward();
       Future.delayed(Duration(seconds: 4), () async {

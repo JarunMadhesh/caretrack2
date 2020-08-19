@@ -1,3 +1,6 @@
+import 'package:caretrack/authentication/enterAgeScreen.dart';
+import 'package:caretrack/authentication/passwordScreen.dart';
+import 'package:caretrack/authentication/setPassword.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neumorphic/neumorphic.dart';
@@ -99,6 +102,9 @@ class MyApp extends StatelessWidget {
           SelectProfileScreen.route: (ctx) => SelectProfileScreen(),
           SelectLanguageScreen.route: (ctx) => SelectLanguageScreen(),
           WelomePage.route: (ctx) => WelomePage(),
+          EnterAgeScreen.route: (ctx) => EnterAgeScreen(),
+          SetPassword.route: (ctx) => SetPassword(),
+          PasswordScreen.route: (ctx) => PasswordScreen(),
         },
       ),
     );

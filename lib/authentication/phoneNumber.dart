@@ -1,14 +1,13 @@
+import 'package:caretrack/authentication/passwordScreen.dart';
+import 'package:caretrack/authentication/setPassword.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:neumorphic/neumorphic.dart';
-import 'package:otp_text_field/otp_field.dart';
-import 'package:otp_text_field/style.dart';
 import 'dart:math' as math;
 import 'package:provider/provider.dart';
 
 import 'authentication.dart';
-import 'selectProfile.dart';
-import '../providers/dbProfiles.dart';
 import '../providers/screenController.dart';
 
 class PhoneNumberScreen extends StatefulWidget {
@@ -22,16 +21,27 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
     with TickerProviderStateMixin {
   String errorText = '';
   bool _gotPhone = false;
+  // bool _isReset = false;
 
   Animation<double> _animation;
   AnimationController _controller;
 
-  TextEditingController _phoneController;
+  TextEditingController _phoneController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _phoneController = TextEditingController(text: '');
+    Future.delayed(Duration(seconds: 0), () {
+      setState(() {
+        String phoneNumber = ModalRoute.of(context).settings.arguments;
+        if(phoneNumber!=null) {
+          _gotPhone = true;
+        }
+        // _gotPhone = true;
+        // _isReset = true;
+        _phoneController = TextEditingController(text: phoneNumber);
+      });
+    });
     _controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 700));
     _animation = Tween(begin: 0.0, end: 1.0).animate(
@@ -51,6 +61,14 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     change();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _animation.removeListener(() {});
+    _phoneController.dispose();
+    super.dispose();
   }
 
   Widget errorDialogue(String errorString, Function function) {
@@ -88,7 +106,7 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
           ),
           const SizedBox(height: 20),
           Container(
-            padding:  const EdgeInsets.symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: 40,
               vertical: 30,
             ),
@@ -135,10 +153,16 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).pop();
-                    function();
+                    if (errorString !=
+                            'Invalid OTP. Keep calm and try again.' &&
+                        errorString !=
+                            'Try with your registered mobile number in the hospital') {
+                      function();
+                    }
                   },
                   child: Container(
-                    padding: const  EdgeInsets.symmetric(vertical: 7, horizontal: 30),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 7, horizontal: 30),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
@@ -165,33 +189,43 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
 
   void onPhoneSubmit() async {
     try {
+      FocusScope.of(context).unfocus();
       if (_phoneController.text.length == 0 ||
           _phoneController.text.trim().length == 0) {
         setState(() {
-          errorText = 'Please enter your phone number';
-          return;
+          errorText = 'Please enter your mobile number';
         });
-      } else if (_phoneController.text.contains(new RegExp(r'[A-Z]')) ||
-          _phoneController.text.contains(new RegExp(r'[a-z]')) ||
-          _phoneController.text.length != 10) {
-        setState(() {
-          errorText = 'Please enter a proper phone number';
-        });
-      } else if (_phoneController.text.trim().contains(' ')) {
-        setState(() {
-          errorText = 'Enter your phone number without spaces';
-        });
-      } else {
-        setState(() {
-          errorText = '';
-          Provider.of<ScreenController>(context, listen: false).setTrue();
-        });
-        await Authenticate().postPhoneNo(_phoneController.text);
-        setState(() {
-          _gotPhone = true;
-          Provider.of<ScreenController>(context, listen: false).setFalse();
-        });
+        return;
       }
+      if (!_phoneController.text.contains(new RegExp(r'^[6-9][0-9]{9}$'))) {
+        setState(() {
+          errorText = 'Please enter a proper mobile number';
+        });
+        return;
+      }
+      if (_phoneController.text.trim().contains(' ')) {
+        setState(() {
+          errorText = 'Enter your mobile number without spaces';
+        });
+        return;
+      }
+      setState(() {
+        errorText = '';
+        Provider.of<ScreenController>(context, listen: false).setTrue();
+      });
+      print("hello");
+      final _isRegistered =  await Authenticate().postPhoneNo(_phoneController.text);
+      print("Done");
+      setState(() {
+        //ToDo: check if user has already given the otp and navigate accordingly
+        if (!_isRegistered) {
+          _gotPhone = true;
+        } else {
+          Navigator.of(context).pushReplacementNamed(PasswordScreen.route,
+              arguments: _phoneController.text);
+        }
+        Provider.of<ScreenController>(context, listen: false).setFalse();
+      });
     } catch (err) {
       showDialog(
         context: context,
@@ -216,15 +250,14 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
       if (otp.length != 4 || otp.trim().length != 4) {
         setState(() {
           errorText = 'Please a valid otp';
-          return;
         });
+        return;
       }
-      await Provider.of<DBProfileProvider>(context, listen: false)
-          .fetchprofiles(_phoneController.text, otp, context);
+      await Authenticate().checkOTP(_phoneController.text, otp, context);
       setState(() {
         Provider.of<ScreenController>(context, listen: false).setFalse();
       });
-      Navigator.of(context).pushReplacementNamed(SelectProfileScreen.route,
+      Navigator.of(context).pushReplacementNamed(SetPassword.route,
           arguments: _phoneController.text);
     } catch (err) {
       showDialog(
@@ -241,11 +274,25 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
     }
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    _phoneController.dispose();
-    super.dispose();
+  void onResendOTP() async {
+    try {
+      setState(() {
+        Provider.of<ScreenController>(context, listen: false).setTrue();
+      });
+      await Authenticate().resendOTP(_phoneController.text, context);
+    } catch (err) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.white60,
+        child: errorDialogue(err.toString(), () {
+          onResendOTP();
+        }),
+      );
+    } finally {
+      setState(() {
+        Provider.of<ScreenController>(context, listen: false).setFalse();
+      });
+    }
   }
 
   @override
@@ -283,7 +330,7 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                       alignment: Alignment.centerLeft,
                       child: Text(
                         _gotPhone
-                            ? 'Enter key'
+                            ? 'Enter otp'
                             : 'Enter your registered mobile number in the hospital',
                         style: const TextStyle(
                           fontFamily: 'Raleway',
@@ -293,29 +340,43 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
                     _gotPhone
                         ? NeuCard(
                             constraints: const BoxConstraints(minHeight: 46),
                             curveType: CurveType.emboss,
                             padding: const EdgeInsets.only(
                                 left: 20, right: 20, bottom: 5),
-                            alignment: Alignment.centerLeft,
+                            alignment: Alignment.center,
                             decoration: NeumorphicDecoration(
                               borderRadius: BorderRadius.circular(5),
                             ),
-                            child: OTPTextField(
-                              fieldStyle: FieldStyle.underline,
-                              keyboardType: TextInputType.number,
-                              length: 4,
-                              width: width * 0.55,
-                              textFieldAlignment: MainAxisAlignment.spaceAround,
-                              onCompleted: onOTPsubmit,
-                              style: const TextStyle(
-                                fontFamily: 'Calibre',
-                                fontSize: 21,
-                                fontWeight: FontWeight.w500,
-                                color: const Color(0xff8b3365),
+                            child: Container(
+                              width: 160,
+                              child: TextField(
+                                showCursor: false,
+                                keyboardType: TextInputType.number,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  hintText: "----",
+                                ),
+                                inputFormatters: [
+                                  LengthLimitingTextInputFormatter(4)
+                                ],
+                                onChanged: (str) {
+                                  if (str.length == 4) {
+                                    FocusScope.of(context)
+                                        .requestFocus(FocusNode());
+                                    onOTPsubmit(str);
+                                  }
+                                },
+                                style: TextStyle(
+                                  fontFamily: "Calibre",
+                                  fontSize: 20,
+                                  color: const Color(0xff8b3365),
+                                  letterSpacing: 30,
+                                ),
                               ),
                             ),
                           )
@@ -333,7 +394,8 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                               children: [
                                 Container(
                                   alignment: Alignment.center,
-                                  padding:  const EdgeInsets.only(left: 0, right: 10),
+                                  padding:
+                                      const EdgeInsets.only(left: 0, right: 10),
                                   child: Text(
                                     "+91",
                                     style: const TextStyle(
@@ -375,7 +437,24 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                               ],
                             ),
                           ),
-                    const SizedBox(height: 20),
+                    if (errorText != '') const SizedBox(height: 20),
+                    if (_gotPhone)
+                      GestureDetector(
+                        onTap: onResendOTP,
+                        child: Container(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            "Resend OTP",
+                            style: const TextStyle(
+                              fontFamily: 'Raleway',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (errorText != '') const SizedBox(height: 5),
                     Text(
                       errorText,
                       style: const TextStyle(
@@ -408,21 +487,8 @@ class _PhoneNumberScreen extends State<PhoneNumberScreen>
                     if (_gotPhone)
                       Container(
                         alignment: Alignment.centerLeft,
-                        child: Text(
-                          '*The key is/was sent to your registered mobile number through sms.',
-                          style: const TextStyle(
-                            fontFamily: "Raleway",
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    if (_gotPhone) const SizedBox(height: 15),
-                    if (_gotPhone)
-                      Container(
-                        alignment: Alignment.centerLeft,
                         child: const Text(
-                          "Kindly save your key for future references related to this mobile number.",
+                          "An otp has been sent to your registered mobile phone.",
                           style: const TextStyle(
                             fontFamily: "Raleway",
                             fontSize: 15,

@@ -174,7 +174,6 @@ class _FeedbackScreenState extends State<FeedbackScreen>
         setState(() {
           Provider.of<ScreenController>(context, listen: false).setTrue();
         });
-        await Future.delayed(Duration(seconds: 3));
         await Provider.of<FeedbackProvider>(context, listen: false)
             .postFeedback(
           Provider.of<ProfileProvider>(context, listen: false)
@@ -362,8 +361,11 @@ class _FeedbackScreenState extends State<FeedbackScreen>
                             feedback = str;
                           },
                           validator: (str) {
-                            if (str.length <= 5 || str.trim().length <= 5) {
+                            if (str.length == 0 || str.trim().length == 0) {
                               return "     Please enter your feedback before you submit";
+                            }
+                            if (str.length <= 5 || str.trim().length <= 5) {
+                              return "     Feedback is too short";
                             }
                             return null;
                           },
